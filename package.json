@@ -50,6 +50,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite --port 9000 --open --force",
+    "test:pagination": "playwright test",
     "format": "oxfmt --write .",
     "lint": "oxlint --fix src",
     "analyzer": "vite-bundle-visualizer",
@@ -112,6 +113,7 @@
     "yjs": "13.6.29"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@vitejs/plugin-vue": "^6.0.4",
     "@vue-macros/reactivity-transform": "^3.1.2",
     "esbuild": "^0.28.1",

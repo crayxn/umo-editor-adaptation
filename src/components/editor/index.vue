@@ -39,12 +39,14 @@ import { migrateMathStrings } from '@tiptap/extension-mathematics'
 import { Editor, EditorContent } from '@tiptap/vue-3'
 
 import { getDefaultExtensions, inputAndPasteRules } from '@/extensions'
+import Pagination from '@/extensions/pagination'
 import { contentTransform } from '@/utils/content-transform'
 import { addHistory } from '@/utils/history-record'
 import { loadResource } from '@/utils/load-resource'
 
 const destroyed = inject('destroyed')
 const page = inject('page')
+const pagination = inject('pagination')
 const options = inject('options')
 const uploadFileMap = inject('uploadFileMap')
 const historyRecords = inject('historyRecords')
@@ -134,7 +136,21 @@ const editorInstance = new Editor({
   },
   // enableContentCheck: true,
   parseOptions: options.value.document?.parseOptions,
-  extensions: [...extensions, ...options.value.extensions],
+  extensions: [
+    ...extensions,
+    Pagination.configure({
+      getPageOptions: () => page.value,
+      onLayout: (value) => {
+        if (
+          pagination.value.pageCount !== value.pageCount ||
+          pagination.value.currentPage !== value.currentPage
+        ) {
+          pagination.value = value
+        }
+      },
+    }),
+    ...options.value.extensions,
+  ],
   onCreate({ editor }) {
     if (options.value.disableExtensions.includes('math')) {
       migrateMathStrings(editor)
@@ -151,6 +167,16 @@ const editorInstance = new Editor({
 const editor = inject('editor')
 editor.value = editorInstance
 editor.value.storage.container = container
+watch(
+  () => [
+    page.value.layout,
+    page.value.size,
+    page.value.margin,
+    page.value.orientation,
+  ],
+  () => editorInstance.commands.repaginate(),
+  { deep: true, flush: 'post' },
+)
 watch(
   () => options.value,
   () => {
@@ -186,5 +212,6 @@ onBeforeUnmount(() => {
 
 <style lang="less">
 @import '@/assets/styles/editor.less';
+@import '@/assets/styles/pagination.less';
 @import '@/assets/styles/drager.less';
 </style>

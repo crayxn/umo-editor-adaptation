@@ -460,6 +460,7 @@
     }
   },
   "page": {
+    "count": "Page {currentPage} of {pageCount}",
     "bg": {
       "text": "Background",
       "custom": "Custom Page Background",

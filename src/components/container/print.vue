@@ -3,6 +3,8 @@
 </template>
 
 <script setup>
+import { preparePaginationForPrint } from '@/extensions/pagination/print'
+
 const container = inject('container')
 const editor = inject('editor')
 const printing = inject('printing')
@@ -32,6 +34,7 @@ const prepareEchartsForPrint = (htmlContent) => {
   // 创建一个临时DOM容器用于处理HTML内容
   const tempDiv = document.createElement('div')
   tempDiv.innerHTML = htmlContent
+  preparePaginationForPrint(tempDiv)
 
   // 找到所有需要转换的ECharts实例
   const charts = tempDiv.querySelectorAll('.umo-node-echarts-body')
@@ -87,24 +90,49 @@ const getIframeCode = () => {
         -webkit-print-color-adjust: exact;
       }
       .umo-editor-container{
+        display: block;
+        height: auto !important;
+        min-height: 0;
         background-color: ${background} !important;
       }
       .umo-page-content{
-        transform: scale(1) !important;
-        overflow: hidden;
+        display: block !important;
+        width: auto !important;
+        min-height: 0 !important;
+        transform: none !important;
+        overflow: visible !important;
+      }
+      .umo-page-node-content, .umo-editor-content .umo-editor{
+        padding: 0 !important;
+        min-height: 0 !important;
+      }
+      .umo-editor *{
+        orphans: 1;
+        widows: 1;
+      }
+      .umo-editor-content .tableWrapper{
+        overflow: visible !important;
+      }
+      .umo-print-break{
+        display: block;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        break-before: page;
+      }
+      .umo-print-break::after{
+        display: none !important;
       }
       @page {
         size: ${orientation === 'portrait' ? size?.width : size?.height}cm ${orientation === 'portrait' ? size?.height : size?.width}cm;
-        padding: ${margin?.top}cm 0 ${margin?.bottom}cm;
-        margin: 0;
+        margin: ${margin?.top}cm ${margin?.right}cm ${margin?.bottom}cm ${margin?.left}cm;
         background-color: ${background};
-      }
-      @page:first {
-        padding-top: 0;
-      }
-      @page:last {
-        padding-bottom: 0;
-        page-break-after: avoid;
+        @bottom-center {
+          content: ${page.value.footer !== false ? 'counter(page)' : 'none'};
+          font-size: 10pt;
+          color: #777;
+        }
       }
       </style>
     </head>
@@ -113,9 +141,7 @@ const getIframeCode = () => {
       ${getPlyrSprite()}
       </div>
       <div class="umo-editor-container" style="line-height: ${defaultLineHeight};" aria-expanded="false">
-        <div class="tiptap umo-editor" translate="no">
-          ${getContentHtml()}
-        </div>
+        ${getContentHtml()}
       </div>
       <script>
         document.addEventListener("DOMContentLoaded", (event) => {
@@ -137,8 +163,11 @@ const getIframeCode = () => {
   /* eslint-enable */
 }
 
-const printPage = () => {
+const printPage = async () => {
   editor.value?.commands.blur()
+  await nextTick()
+  editor.value?.commands.repaginate()
+  await new Promise(requestAnimationFrame)
   iframeCode = getIframeCode()
 
   const dialog = useConfirm({
@@ -147,13 +176,17 @@ const printPage = () => {
     header: printing.value ? t('print.title') : t('export.pdf.title'),
     body: printing.value ? t('print.message') : t('export.pdf.message'),
     confirmBtn: printing.value ? t('print.confirm') : t('export.pdf.confirm'),
-    onConfirm() {
+    async onConfirm() {
       dialog.destroy()
-      setTimeout(() => {
-        if (iframeRef && iframeRef.contentWindow) {
-          iframeRef.contentWindow.print()
-        }
-      }, 300)
+      const printDocument = iframeRef?.contentDocument
+      if (!printDocument || !iframeRef.contentWindow) return
+      await printDocument.fonts?.ready
+      await Promise.all(
+        Array.from(printDocument.images).map((image) =>
+          image.decode().catch(() => {}),
+        ),
+      )
+      iframeRef.contentWindow.print()
     },
     onClosed() {
       printing.value = false

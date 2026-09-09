@@ -16,6 +16,7 @@
       >
         <t-watermark
           class="umo-page-content"
+          :class="{ 'umo-paginated-content': pageOptions.layout === 'page' }"
           :style="{
             '--umo-page-orientation': pageOptions.orientation,
             '--umo-page-background': pageOptions.background,
@@ -27,6 +28,8 @@
               pageOptions.layout === 'page' ? pageSize.width + 'cm' : 'auto',
             '--umo-page-height':
               pageOptions.layout === 'page' ? pageSize.height + 'cm' : '100%',
+            '--umo-page-gap': pageGap + 'px',
+            '--umo-document-height': documentHeight,
             width:
               pageOptions.layout === 'page' ? pageSize.width + 'cm' : '100%',
             transform: `scale(${pageOptions.zoomLevel ? pageOptions.zoomLevel / 100 : 1})`,
@@ -35,7 +38,52 @@
           v-bind="watermarkOptions"
           :watermark-content="pageOptions.watermark"
         >
-          <div class="umo-page-node-header" contenteditable="false">
+          <div
+            v-if="pageOptions.layout === 'page'"
+            class="umo-page-sheets"
+            aria-hidden="true"
+            contenteditable="false"
+          >
+            <div
+              v-for="number in pagination.pageCount"
+              :key="number"
+              class="umo-page-sheet"
+              :data-page-number="number"
+              :style="{
+                top: `calc(${number - 1} * (var(--umo-page-height) + var(--umo-page-gap)))`,
+              }"
+            >
+              <div class="umo-page-node-header">
+                <div
+                  class="umo-page-corner corner-tl"
+                  style="width: var(--umo-page-margin-left)"
+                ></div>
+                <div class="umo-page-node-header-content"></div>
+                <div
+                  class="umo-page-corner corner-tr"
+                  style="width: var(--umo-page-margin-right)"
+                ></div>
+              </div>
+              <div class="umo-page-node-footer">
+                <div
+                  class="umo-page-corner corner-bl"
+                  style="width: var(--umo-page-margin-left)"
+                ></div>
+                <div class="umo-page-node-footer-content umo-page-number">
+                  {{ pageOptions.footer !== false ? number : '' }}
+                </div>
+                <div
+                  class="umo-page-corner corner-br"
+                  style="width: var(--umo-page-margin-right)"
+                ></div>
+              </div>
+              <div
+                v-if="number < pagination.pageCount"
+                class="umo-page-gap"
+              ></div>
+            </div>
+          </div>
+          <div v-else class="umo-page-node-header" contenteditable="false">
             <div
               class="umo-page-corner corner-tl"
               style="width: var(--umo-page-margin-left)"
@@ -54,7 +102,11 @@
               </template>
             </editor>
           </div>
-          <div class="umo-page-node-footer" contenteditable="false">
+          <div
+            v-if="pageOptions.layout !== 'page'"
+            class="umo-page-node-footer"
+            contenteditable="false"
+          >
             <div
               class="umo-page-corner corner-bl"
               style="width: var(--umo-page-margin-left)"
@@ -91,9 +143,17 @@
 </template>
 
 <script setup>
+import { PAGE_GAP } from '@/extensions/pagination/layout'
+
 const container = inject('container')
 const imageViewer = inject('imageViewer')
 const pageOptions = inject('page')
+const pagination = inject('pagination')
+const pageGap = PAGE_GAP
+const documentHeight = $computed(
+  () =>
+    `calc(${pagination.value.pageCount} * var(--umo-page-height) + ${pagination.value.pageCount - 1} * var(--umo-page-gap))`,
+)
 
 // 页面大小
 const pageSize = $computed(() => {
@@ -245,9 +305,6 @@ watch(
     box-sizing: border-box;
     .umo-zoomable-content {
       margin: 0 auto;
-      box-shadow:
-        rgba(0, 0, 0, 0.06) 0px 0px 10px 0px,
-        rgba(0, 0, 0, 0.04) 0px 0px 0px 1px;
     }
   }
   &.umo-web-container {

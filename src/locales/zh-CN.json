@@ -460,6 +460,7 @@
     }
   },
   "page": {
+    "count": "第 {currentPage} 页，共 {pageCount} 页",
     "bg": {
       "text": "页面背景",
       "custom": "自定义页面背景",

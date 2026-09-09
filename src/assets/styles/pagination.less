@@ -1,0 +1,132 @@
+// Widgets reserve space in the existing editing surface. They are not part of
+// the document and must not inherit paragraph spacing or list/table markers.
+.umo-editor-content .umo-editor.umo-pagination {
+  .umo-pagination-spacer {
+    display: block !important;
+    height: var(--umo-pagination-spacer-height) !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    background: transparent !important;
+    pointer-events: none;
+    user-select: none;
+    overflow: hidden;
+    list-style: none !important;
+    counter-increment: none !important;
+    clear: both;
+
+    &::before,
+    &::after {
+      display: none !important;
+    }
+  }
+
+  .umo-pagination-spacer-row {
+    display: table-row !important;
+
+    > td {
+      height: var(--umo-pagination-spacer-height) !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      font-size: 0 !important;
+      line-height: 0 !important;
+    }
+  }
+
+  .umo-page-break {
+    height: var(--umo-pagination-break-height, 0px);
+    min-height: 0;
+    margin: 0 !important;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    break-before: auto;
+
+    &::after {
+      top: 12px;
+    }
+  }
+
+  &.umo-pagination-measuring {
+    .umo-pagination-spacer {
+      display: none !important;
+    }
+    .umo-page-break {
+      height: 0 !important;
+    }
+    .umo-pagination-scaled {
+      zoom: 1 !important;
+    }
+  }
+}
+
+.umo-zoomable-container .umo-page-content.umo-paginated-content {
+  display: block;
+  min-height: var(--umo-document-height);
+  background: transparent;
+
+  > .umo-page-node-content {
+    padding-top: var(--umo-page-margin-top);
+    padding-bottom: var(--umo-page-margin-bottom);
+  }
+}
+
+.umo-page-sheets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.umo-page-sheet {
+  position: absolute;
+  width: 100%;
+  height: var(--umo-page-height);
+  background: var(--umo-page-background);
+  box-shadow:
+    0 0 10px #0000000f,
+    0 0 0 1px #0000000a;
+
+  .umo-page-node-header,
+  .umo-page-node-footer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--umo-page-background);
+    z-index: 20;
+  }
+
+  .umo-page-node-header {
+    top: 0;
+  }
+  .umo-page-node-footer {
+    bottom: 0;
+  }
+
+  .umo-page-number {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    color: var(--umo-text-color-light);
+  }
+}
+
+.umo-page-gap {
+  position: absolute;
+  top: 100%;
+  left: -1px;
+  right: -1px;
+  height: var(--umo-page-gap);
+  background: var(--umo-container-background);
+  z-index: 20;
+}
+
+.umo-page-count {
+  white-space: nowrap;
+}

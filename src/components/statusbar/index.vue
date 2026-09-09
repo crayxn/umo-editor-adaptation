@@ -91,6 +91,10 @@
         </t-dropdown-menu>
       </t-dropdown>
       <div class="umo-status-bar-split"></div>
+      <template v-if="page.layout === 'page'">
+        <span class="umo-page-count">{{ t('page.count', pagination) }}</span>
+        <div class="umo-status-bar-split"></div>
+      </template>
       <t-popup
         v-if="editor"
         v-model="showWordCount"
@@ -344,6 +348,7 @@ const { locale } = useI18n()
 const container = inject('container')
 const editor = inject('editor')
 const page = inject('page')
+const pagination = inject('pagination')
 const options = inject('options')
 const $document = useState('document', options)
 

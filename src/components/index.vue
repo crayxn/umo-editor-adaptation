@@ -127,6 +127,7 @@ const options = ref(getOptions(props, defaultOptions))
 const editor = ref(null)
 const savedAt = ref(null)
 const page = ref({})
+const pagination = ref({ pageCount: 1, currentPage: 1 })
 const blockMenu = ref(false)
 const imageViewer = ref({ visible: false, current: null })
 const searchReplace = ref(false)
@@ -147,6 +148,7 @@ provide('options', options)
 provide('editor', editor)
 provide('savedAt', savedAt)
 provide('page', page)
+provide('pagination', pagination)
 provide('blockMenu', blockMenu)
 provide('imageViewer', imageViewer)
 provide('searchReplace', searchReplace)
@@ -183,6 +185,7 @@ watch(
       showBookmark,
       showLineNumber,
       showToc,
+      footer: true,
       zoomLevel: 100,
       autoWidth: false,
       preview: {
@@ -968,13 +971,12 @@ const getVanillaHTML = async () => {
 
   // 如果水印为空，则移除水印
   if (page.value.watermark.text === '') {
-    const watermarkNode = pageNode.lastElementChild
-    if (
-      watermarkNode &&
-      !watermarkNode?.classList?.contains('umo-page-node-footer')
-    ) {
-      watermarkNode.remove()
-    }
+    Array.from(pageNode.children)
+      .filter(
+        (node) =>
+          node.style.backgroundImage && node.style.pointerEvents === 'none',
+      )
+      .forEach((watermarkNode) => watermarkNode.remove())
   }
 
   // 移除菜单
@@ -1303,6 +1305,7 @@ defineExpose({
   setTheme,
   setSkin,
   getPage: () => page.value,
+  getPagination: () => ({ ...pagination.value }),
   getContent,
   getImage,
   getText,
