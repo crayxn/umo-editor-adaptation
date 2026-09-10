@@ -30,7 +30,7 @@
 import { TextSelection } from '@tiptap/pm/state'
 
 const container = inject('container')
-const editor = inject('editor')
+const editor = inject('mainEditor')
 const page = inject('page')
 
 defineEmits(['close'])

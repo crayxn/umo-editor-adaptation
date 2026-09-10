@@ -403,6 +403,40 @@ export default new ObjectSchema({
           },
         },
       },
+      header: {
+        required: false,
+        merge: 'replace',
+        validate: 'object',
+        schema: {
+          show: {
+            merge: 'replace',
+            validate: 'boolean',
+            required: false,
+          },
+          content: {
+            merge: 'replace',
+            validate: 'string',
+            required: false,
+          },
+        },
+      },
+      footer: {
+        required: false,
+        merge: 'replace',
+        validate: 'object',
+        schema: {
+          show: {
+            merge: 'replace',
+            validate: 'boolean',
+            required: false,
+          },
+          content: {
+            merge: 'replace',
+            validate: 'string',
+            required: false,
+          },
+        },
+      },
     },
   },
   document: {

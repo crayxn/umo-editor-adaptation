@@ -1,8 +1,17 @@
 export const PAGE_GAP = 24
 export const CM_TO_PX = 96 / 2.54
+// Space kept between header or footer content and the body when they grow.
+export const HEADER_FOOTER_GAP_CM = 0.2
 
 const positive = (value, fallback) =>
   Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : fallback
+
+// Distance from the paper edge to the header (or footer) content, in cm. Word
+// uses 1.5cm for its default margins; small margins shrink it proportionally.
+export function getHeaderFooterDistance(marginCm) {
+  const margin = Math.max(0, Number(marginCm) || 0)
+  return Math.min(1.5, Math.max(0.5, margin * 0.6))
+}
 
 export function getPageGeometry(page = {}) {
   const width = positive(page.size?.width, 21) * CM_TO_PX
@@ -14,13 +23,19 @@ export function getPageGeometry(page = {}) {
       Math.max(0, Number(page.margin?.[side]) || 0) * CM_TO_PX,
     ]),
   )
+  // Tall headers or footers push the body inwards, like Word does.
+  const inset = {
+    top: Math.max(margin.top, Number(page.insets?.top) || 0),
+    bottom: Math.max(margin.bottom, Number(page.insets?.bottom) || 0),
+  }
   const pageHeight = landscape ? width : height
   return {
     width: landscape ? height : width,
     height: pageHeight,
     margin,
+    inset,
     gap: PAGE_GAP,
-    bodyHeight: Math.max(1, pageHeight - margin.top - margin.bottom),
+    bodyHeight: Math.max(1, pageHeight - inset.top - inset.bottom),
     stride: pageHeight + PAGE_GAP,
   }
 }

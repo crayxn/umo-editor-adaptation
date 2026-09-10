@@ -28,7 +28,8 @@
 <script setup>
 import { DragHandle } from '@tiptap/extension-drag-handle-vue-3'
 
-const editor = inject('editor')
+// 块菜单（DragHandle）生命周期内不能切换编辑器实例，固定绑定正文
+const editor = inject('mainEditor')
 let selectedNode = $ref(null)
 let selectedNodePos = $ref(null)
 

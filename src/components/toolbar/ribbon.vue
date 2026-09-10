@@ -223,6 +223,8 @@
           </div>
           <div class="umo-virtual-group">
             <menus-toolbar-page-break />
+            <menus-toolbar-page-header v-if="!disableMenu('header-footer')" />
+            <menus-toolbar-page-footer v-if="!disableMenu('header-footer')" />
             <menus-toolbar-page-break-marks />
             <menus-toolbar-page-line-number />
             <menus-toolbar-page-watermark v-if="!disableMenu('watermark')" />

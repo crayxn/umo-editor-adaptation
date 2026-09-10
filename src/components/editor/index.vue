@@ -18,7 +18,7 @@
   />
   <template v-if="editor && !destroyed">
     <menus-block
-      v-if="options.document?.enableBlockMenu"
+      v-if="options.document?.enableBlockMenu && !headerFooter.active"
       v-show="
         page.zoomLevel === 100 && !page.preview?.enabled && editor.isEditable
       "
@@ -47,6 +47,7 @@ import { loadResource } from '@/utils/load-resource'
 const destroyed = inject('destroyed')
 const page = inject('page')
 const pagination = inject('pagination')
+const headerFooter = inject('headerFooter')
 const options = inject('options')
 const uploadFileMap = inject('uploadFileMap')
 const historyRecords = inject('historyRecords')
@@ -139,7 +140,10 @@ const editorInstance = new Editor({
   extensions: [
     ...extensions,
     Pagination.configure({
-      getPageOptions: () => page.value,
+      getPageOptions: () => ({
+        ...page.value,
+        insets: headerFooter.value.insets,
+      }),
       onLayout: (value) => {
         if (
           pagination.value.pageCount !== value.pageCount ||
@@ -164,7 +168,10 @@ const editorInstance = new Editor({
     flushSyncDocumentContent()
   },
 })
-const editor = inject('editor')
+// 正文编辑器子树（节点视图、气泡菜单、块菜单）固定使用正文实例；
+// 工具栏等外部组件通过根组件提供的活动编辑器切换到页眉页脚
+const editor = inject('mainEditor')
+provide('editor', editor)
 editor.value = editorInstance
 editor.value.storage.container = container
 watch(
@@ -173,6 +180,7 @@ watch(
     page.value.size,
     page.value.margin,
     page.value.orientation,
+    headerFooter.value.insets,
   ],
   () => editorInstance.commands.repaginate(),
   { deep: true, flush: 'post' },

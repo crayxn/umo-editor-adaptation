@@ -94,7 +94,7 @@
 <script setup>
 import { getSelectionText } from '@/utils/selection'
 
-const editor = inject('editor')
+const editor = inject('mainEditor')
 const searchReplace = inject('searchReplace')
 
 let autofocus = $ref(false)

@@ -71,8 +71,13 @@
   background: transparent;
 
   > .umo-page-node-content {
-    padding-top: var(--umo-page-margin-top);
-    padding-bottom: var(--umo-page-margin-bottom);
+    padding-top: var(--umo-page-inset-top, var(--umo-page-margin-top));
+    padding-bottom: var(--umo-page-inset-bottom, var(--umo-page-margin-bottom));
+  }
+
+  // Word dims the body while a header or footer is being edited.
+  &.umo-header-footer-editing > .umo-page-node-content .umo-editor-content {
+    opacity: 0.45;
   }
 }
 
@@ -106,14 +111,6 @@
   }
   .umo-page-node-footer {
     bottom: 0;
-  }
-
-  .umo-page-number {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 12px;
-    color: var(--umo-text-color-light);
   }
 }
 

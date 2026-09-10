@@ -38,7 +38,7 @@ import { selectNodePos } from '@/utils/position'
 const { getPos, node } = defineProps(nodeViewProps)
 
 const container = inject('container')
-const editor = inject('editor')
+const editor = inject('mainEditor')
 
 defineEmits(['close'])
 

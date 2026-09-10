@@ -101,6 +101,8 @@ const emits = defineEmits([
   'changed:pagePreview',
   'changed:pageZoom',
   'changed:pageWatermark',
+  'changed:pageHeader',
+  'changed:pageFooter',
   'changed:locale',
   'changed:theme',
   'changed:skin',
@@ -128,6 +130,21 @@ const editor = ref(null)
 const savedAt = ref(null)
 const page = ref({})
 const pagination = ref({ pageCount: 1, currentPage: 1 })
+// 页眉页脚编辑状态：active 为正在编辑的区域，page 为承载实时编辑器的页码，
+// insets 为页眉页脚内容撑开后正文实际使用的上下留白（px，0 表示沿用页边距）
+const headerFooter = ref({
+  active: null,
+  page: 1,
+  insets: { top: 0, bottom: 0 },
+})
+const headerFooterEditors = shallowReactive({ header: null, footer: null })
+// 工具栏、菜单等外部组件始终操作“当前活动”的编辑器：编辑页眉页脚时切换到对应实例
+const activeEditor = computed(
+  () =>
+    (headerFooter.value.active &&
+      headerFooterEditors[headerFooter.value.active]) ||
+    editor.value,
+)
 const blockMenu = ref(false)
 const imageViewer = ref({ visible: false, current: null })
 const searchReplace = ref(false)
@@ -145,7 +162,10 @@ const $layout = useState('layout', options)
 
 provide('container', container)
 provide('options', options)
-provide('editor', editor)
+provide('editor', activeEditor)
+provide('mainEditor', editor)
+provide('headerFooter', headerFooter)
+provide('headerFooterEditors', headerFooterEditors)
 provide('savedAt', savedAt)
 provide('page', page)
 provide('pagination', pagination)
@@ -173,6 +193,8 @@ watch(
     showBookmark,
     showLineNumber,
     showToc,
+    header,
+    footer,
   }) => {
     page.value = {
       layout: $layout.value || layouts[0],
@@ -185,7 +207,8 @@ watch(
       showBookmark,
       showLineNumber,
       showToc,
-      footer: true,
+      header: { show: header?.show !== false, content: header?.content || '' },
+      footer: { show: footer?.show !== false, content: footer?.content || '' },
       zoomLevel: 100,
       autoWidth: false,
       preview: {
@@ -202,6 +225,19 @@ watch(
   () => options.value.document?.readOnly,
   (val) => {
     editor.value?.setEditable(!val)
+  },
+)
+// 只读、Web 视图和演示模式下不允许编辑页眉页脚
+watch(
+  () => [
+    options.value.document?.readOnly,
+    page.value.layout,
+    page.value.preview?.enabled,
+  ],
+  ([readOnly, layout, preview]) => {
+    if (readOnly || layout !== 'page' || preview) {
+      headerFooter.value.active = null
+    }
   },
 )
 
@@ -504,6 +540,22 @@ watch(
 )
 
 watch(
+  () => page.value.header,
+  (pageHeader, oldPageHeader) => {
+    emits('changed:pageHeader', { pageHeader, oldPageHeader })
+  },
+  { deep: true },
+)
+
+watch(
+  () => page.value.footer,
+  (pageFooter, oldPageFooter) => {
+    emits('changed:pageFooter', { pageFooter, oldPageFooter })
+  },
+  { deep: true },
+)
+
+watch(
   () => printing.value,
   () => {
     emits('print')
@@ -676,6 +728,48 @@ const setPage = (params) => {
     }
     page.value.margin = copyMargin
   }
+
+  for (const key of ['header', 'footer']) {
+    if (params[key] === undefined) continue
+    if (!isRecord(params[key])) {
+      throw new Error(`"params.${key}" must be an object.`)
+    }
+    const { show, content } = params[key]
+    if (show !== undefined && !isBoolean(show)) {
+      throw new Error(`"params.${key}.show" must be a boolean.`)
+    }
+    if (content !== undefined && !isString(content)) {
+      throw new Error(`"params.${key}.content" must be a string.`)
+    }
+    page.value[key] = {
+      show: show === undefined ? page.value[key]?.show !== false : show,
+      content: content === undefined ? page.value[key]?.content || '' : content,
+    }
+  }
+}
+
+// 进入或退出页眉页脚编辑。kind 为 'header' | 'footer'，传 null 退出。
+const editHeaderFooter = (kind = 'header', pageNumber) => {
+  if (kind === null) {
+    headerFooter.value.active = null
+    return
+  }
+  if (!['header', 'footer'].includes(kind)) {
+    throw new Error('"kind" must be one of "header", "footer" or null.')
+  }
+  if (options.value.document?.readOnly || page.value.layout !== 'page') {
+    return
+  }
+  if (page.value[kind] && page.value[kind].show === false) {
+    page.value[kind].show = true
+  }
+  if (isNumber(pageNumber) && pageNumber >= 1) {
+    headerFooter.value.page = Math.min(
+      Math.floor(pageNumber),
+      pagination.value.pageCount,
+    )
+  }
+  headerFooter.value.active = kind
 }
 
 const setWatermark = (params) => {
@@ -1204,6 +1298,11 @@ const getContentExcerpt = (charLimit = 100, more = ' ...') => {
 }
 /* 撤销 重做操作*/
 const undoHistory = () => {
+  // 页眉页脚编辑器有独立的历史记录
+  if (headerFooter.value.active) {
+    activeEditor.value?.chain().focus().undo().run()
+    return
+  }
   undoHistoryRecord(historyRecords, function (record) {
     if (record?.type === 'editor') {
       editor?.value?.chain().focus().undo().run()
@@ -1216,6 +1315,10 @@ const undoHistory = () => {
   })
 }
 const redoHistory = () => {
+  if (headerFooter.value.active) {
+    activeEditor.value?.chain().focus().redo().run()
+    return
+  }
   redoHistoryRecord(historyRecords, function (record) {
     if (record?.type === 'editor') {
       editor?.value?.chain().focus().redo().run()
@@ -1287,6 +1390,7 @@ provide('reset', reset)
 provide('getVanillaHTML', getVanillaHTML)
 provide('undoHistory', undoHistory)
 provide('redoHistory', redoHistory)
+provide('editHeaderFooter', editHeaderFooter)
 // Exposing Methods
 defineExpose({
   getOptions: () => options.value,
@@ -1306,6 +1410,8 @@ defineExpose({
   setSkin,
   getPage: () => page.value,
   getPagination: () => ({ ...pagination.value }),
+  editHeaderFooter,
+  getHeaderFooterEditor: (kind = 'header') => headerFooterEditors[kind],
   getContent,
   getImage,
   getText,

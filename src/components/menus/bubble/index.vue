@@ -1,9 +1,11 @@
 <template>
-  <bubble-menu v-if="editor" class="umo-editor-bubble-menu" :editor="editor">
-    <menus-bubble-menus
-      v-if="options?.document?.enableBubbleMenu"
-      :key="bubbleMenuKey"
-    >
+  <bubble-menu
+    v-if="editor"
+    :key="bubbleMenuKey"
+    class="umo-editor-bubble-menu"
+    :editor="editor"
+  >
+    <menus-bubble-menus v-if="options?.document?.enableBubbleMenu">
       <template #bubble_menu="props">
         <slot name="bubble_menu" v-bind="props" />
       </template>
@@ -18,9 +20,14 @@ import { shortId } from '@/utils/short-id'
 const editor = inject('editor')
 const options = inject('options')
 
+// BubbleMenu 只在挂载时绑定编辑器实例，切换到页眉页脚编辑器时需要重新挂载
 let bubbleMenuKey = $ref(shortId())
 watch(
-  () => [options.value.document?.readOnly, editor.value?.isEditable],
+  () => [
+    options.value.document?.readOnly,
+    editor.value?.isEditable,
+    editor.value,
+  ],
   async () => {
     await nextTick()
     bubbleMenuKey = shortId()

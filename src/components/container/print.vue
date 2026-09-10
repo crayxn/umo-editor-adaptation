@@ -3,13 +3,18 @@
 </template>
 
 <script setup>
-import { preparePaginationForPrint } from '@/extensions/pagination/print'
+import {
+  buildPrintPages,
+  preparePaginationForPrint,
+} from '@/extensions/pagination/print'
+import { getHeaderFooterDistance } from '@/extensions/pagination/layout'
 
 const container = inject('container')
-const editor = inject('editor')
+const editor = inject('mainEditor')
 const printing = inject('printing')
 const exportFile = inject('exportFile')
 const page = inject('page')
+const headerFooter = inject('headerFooter')
 const options = inject('options')
 
 const iframeRef = $ref(null)
@@ -24,18 +29,17 @@ const getPlyrSprite = () => {
   return document.querySelector('#sprite-plyr')?.innerHTML || ''
 }
 
-const getContentHtml = () => {
+const getContentDiv = () => {
   const originalContent =
     document.querySelector(`${container} .umo-page-content`)?.outerHTML || ''
-  return prepareEchartsForPrint(originalContent)
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = originalContent
+  preparePaginationForPrint(tempDiv)
+  prepareEchartsForPrint(tempDiv)
+  return tempDiv
 }
 // 因echart依赖于组件动态展示，打印时效果无法通过html实现，所以通过转成图片方式解决
-const prepareEchartsForPrint = (htmlContent) => {
-  // 创建一个临时DOM容器用于处理HTML内容
-  const tempDiv = document.createElement('div')
-  tempDiv.innerHTML = htmlContent
-  preparePaginationForPrint(tempDiv)
-
+const prepareEchartsForPrint = (tempDiv) => {
   // 找到所有需要转换的ECharts实例
   const charts = tempDiv.querySelectorAll('.umo-node-echarts-body')
   for (const chartElement of charts) {
@@ -59,7 +63,6 @@ const prepareEchartsForPrint = (htmlContent) => {
       }
     }
   }
-  return tempDiv.innerHTML
 }
 
 const defaultLineHeight = $computed(
@@ -68,6 +71,27 @@ const defaultLineHeight = $computed(
 
 const getIframeCode = () => {
   const { orientation, size, margin, background } = page.value
+  const contentDiv = getContentDiv()
+  // 分页布局下按页拆分内容并注入页眉页脚（页码字段按页填充）
+  const withHeaderFooter =
+    page.value.layout === 'page' &&
+    (page.value.header?.show !== false || page.value.footer?.show !== false)
+  if (withHeaderFooter) {
+    buildPrintPages(contentDiv, {
+      headerHtml:
+        page.value.header?.show !== false
+          ? page.value.header?.content || ''
+          : '',
+      footerHtml:
+        page.value.footer?.show !== false
+          ? page.value.footer?.content || ''
+          : '',
+      margin,
+      insets: headerFooter.value?.insets,
+    })
+  }
+  const headerDistance = getHeaderFooterDistance(margin?.top)
+  const footerDistance = getHeaderFooterDistance(margin?.bottom)
   /* eslint-disable */
   return `
     <!DOCTYPE html>
@@ -124,15 +148,32 @@ const getIframeCode = () => {
       .umo-print-break::after{
         display: none !important;
       }
+      .umo-print-page{
+        position: relative;
+      }
+      .umo-print-page:not(:last-child){
+        break-after: page;
+      }
+      .umo-print-page-header{
+        position: absolute;
+        top: ${headerDistance}cm;
+        left: 0;
+        right: 0;
+        box-sizing: border-box;
+        padding: 0 ${margin?.right}cm 0 ${margin?.left}cm;
+      }
+      .umo-print-page-footer{
+        position: absolute;
+        bottom: ${footerDistance}cm;
+        left: 0;
+        right: 0;
+        box-sizing: border-box;
+        padding: 0 ${margin?.right}cm 0 ${margin?.left}cm;
+      }
       @page {
         size: ${orientation === 'portrait' ? size?.width : size?.height}cm ${orientation === 'portrait' ? size?.height : size?.width}cm;
-        margin: ${margin?.top}cm ${margin?.right}cm ${margin?.bottom}cm ${margin?.left}cm;
+        margin: ${withHeaderFooter ? 0 : `${margin?.top}cm ${margin?.right}cm ${margin?.bottom}cm ${margin?.left}cm`};
         background-color: ${background};
-        @bottom-center {
-          content: ${page.value.footer !== false ? 'counter(page)' : 'none'};
-          font-size: 10pt;
-          color: #777;
-        }
       }
       </style>
     </head>
@@ -141,7 +182,7 @@ const getIframeCode = () => {
       ${getPlyrSprite()}
       </div>
       <div class="umo-editor-container" style="line-height: ${defaultLineHeight};" aria-expanded="false">
-        ${getContentHtml()}
+        ${contentDiv.innerHTML}
       </div>
       <script>
         document.addEventListener("DOMContentLoaded", (event) => {

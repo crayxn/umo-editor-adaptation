@@ -475,6 +475,37 @@
     "break": "Page Break",
     "lineNumber": "Line Numbers",
     "margin": "Margins",
+    "header": {
+      "text": "Header",
+      "edit": "Edit Header",
+      "show": "Show Header",
+      "hide": "Hide Header",
+      "placeholder": "Type the header content here"
+    },
+    "footer": {
+      "text": "Footer",
+      "edit": "Edit Footer",
+      "show": "Show Footer",
+      "hide": "Hide Footer",
+      "placeholder": "Type the footer content here"
+    },
+    "headerFooter": {
+      "pageNumber": "Page Number",
+      "pageCount": "Page Count",
+      "insertPageNumber": "Insert Page Number",
+      "insertPageCount": "Insert Page Count",
+      "format": "Number Format",
+      "formats": {
+        "decimal": "1, 2, 3",
+        "lowerRoman": "i, ii, iii",
+        "upperRoman": "I, II, III",
+        "lowerAlpha": "a, b, c",
+        "upperAlpha": "A, B, C",
+        "chinese": "一, 二, 三"
+      },
+      "close": "Close Header and Footer",
+      "hint": "Double-click a header or footer to edit it. Press Esc or click the body to leave."
+    },
     "orientation": {
       "text": "Orientation",
       "landscape": "Landscape",

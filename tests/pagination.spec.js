@@ -84,10 +84,15 @@ test.beforeEach(async ({ page }) => {
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, (route) => route.abort())
   await page.goto('./')
   await page.waitForFunction(
-    () => document.querySelector('.tiptap.umo-editor')?.editor,
+    () =>
+      document.querySelector(
+        '.tiptap.umo-editor:not(.umo-header-footer-editor)',
+      )?.editor,
   )
   await page.evaluate(() => {
-    window.editor = document.querySelector('.tiptap.umo-editor').editor
+    window.editor = document.querySelector(
+      '.tiptap.umo-editor:not(.umo-header-footer-editor)',
+    ).editor
     let component = document.querySelector(
       '.umo-editor-container',
     ).__vueParentComponent
@@ -139,7 +144,9 @@ test('a single paragraph flows across pages and supports cross-page undo', async
     window.editor.commands.focus()
     return json
   })
-  await expect(page.locator('.tiptap.umo-editor')).toBeFocused()
+  await expect(
+    page.locator('.tiptap.umo-editor:not(.umo-header-footer-editor)'),
+  ).toBeFocused()
   await page.keyboard.press('Backspace')
   await settle(page)
   await page.evaluate(() => window.editor.commands.undo())
@@ -155,8 +162,13 @@ test('manual page breaks survive automatic reflow and consecutive breaks create 
   await page.evaluate(() =>
     window.editor.chain().focus().setTextSelection(3).run(),
   )
-  await expect(page.locator('.tiptap.umo-editor')).toBeFocused()
-  await page.keyboard.press('Control+Enter')
+  await expect(
+    page.locator('.tiptap.umo-editor:not(.umo-header-footer-editor)'),
+  ).toBeFocused()
+  // tiptap 的 Mod-Enter 在 macOS 上是 Cmd+Enter，其余平台是 Ctrl+Enter
+  await page.keyboard.press(
+    process.platform === 'darwin' ? 'Meta+Enter' : 'Control+Enter',
+  )
   await settle(page)
   expect(await pageCount(page)).toBe(2)
   await expect(page.locator('.umo-editor > .umo-page-break')).toHaveCount(1)
@@ -236,7 +248,9 @@ test('cursor keys and typing cross a page boundary without adding document nodes
       .run()
     return boundary
   })
-  await expect(page.locator('.tiptap.umo-editor')).toBeFocused()
+  await expect(
+    page.locator('.tiptap.umo-editor:not(.umo-header-footer-editor)'),
+  ).toBeFocused()
   await page.keyboard.press('ArrowRight')
   await expect
     .poll(() => page.evaluate(() => window.editor.state.selection.head))

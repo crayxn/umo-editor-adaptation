@@ -135,7 +135,7 @@ const emits = defineEmits(['dropdown-visible'])
 
 const container = inject('container')
 const options = inject('options')
-const editor = inject('editor')
+const editor = inject('mainEditor')
 const uploadFileMap = inject('uploadFileMap')
 const blockMenu = inject('blockMenu')
 

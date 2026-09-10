@@ -1,5 +1,5 @@
 import { Extension } from '@tiptap/core'
-import { Plugin } from '@tiptap/pm/state'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 
 const getRegex = (s, disableRegex, caseSensitive) => {
@@ -249,7 +249,7 @@ export const SearchAndReplace = Extension.create({
 
     return [
       new Plugin({
-        key: 'search-replace',
+        key: new PluginKey('search-replace'),
         state: {
           init: () => DecorationSet.empty,
           apply({ doc, docChanged }, oldState) {

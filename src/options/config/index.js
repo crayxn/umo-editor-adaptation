@@ -37,6 +37,15 @@ export default {
       fontWeight: 'normal',
       text: '',
     },
+    header: {
+      show: true,
+      content: '',
+    },
+    footer: {
+      show: true,
+      content:
+        '<p style="text-align: center"><span data-type="pageNumber"></span></p>',
+    },
   },
   document: {
     title: '',

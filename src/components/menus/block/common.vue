@@ -75,7 +75,7 @@ const props = defineProps({
 const emits = defineEmits(['dropdown-visible'])
 
 const container = inject('container')
-const editor = inject('editor')
+const editor = inject('mainEditor')
 const blockMenu = inject('blockMenu')
 
 let menuActive = $ref(false)

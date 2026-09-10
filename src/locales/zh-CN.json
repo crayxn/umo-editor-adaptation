@@ -475,6 +475,37 @@
     "break": "分页符",
     "lineNumber": "显示行号",
     "margin": "页边距",
+    "header": {
+      "text": "页眉",
+      "edit": "编辑页眉",
+      "show": "显示页眉",
+      "hide": "隐藏页眉",
+      "placeholder": "在此输入页眉内容"
+    },
+    "footer": {
+      "text": "页脚",
+      "edit": "编辑页脚",
+      "show": "显示页脚",
+      "hide": "隐藏页脚",
+      "placeholder": "在此输入页脚内容"
+    },
+    "headerFooter": {
+      "pageNumber": "页码",
+      "pageCount": "总页数",
+      "insertPageNumber": "插入页码",
+      "insertPageCount": "插入总页数",
+      "format": "页码格式",
+      "formats": {
+        "decimal": "1, 2, 3",
+        "lowerRoman": "i, ii, iii",
+        "upperRoman": "I, II, III",
+        "lowerAlpha": "a, b, c",
+        "upperAlpha": "A, B, C",
+        "chinese": "一, 二, 三"
+      },
+      "close": "关闭页眉页脚",
+      "hint": "双击进入页眉或页脚编辑，按 Esc 或点击正文退出"
+    },
     "orientation": {
       "text": "页面方向",
       "landscape": "横向",

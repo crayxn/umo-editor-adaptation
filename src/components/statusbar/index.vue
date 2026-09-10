@@ -346,7 +346,7 @@ import { getShortcut } from '@/utils/shortcut'
 
 const { locale } = useI18n()
 const container = inject('container')
-const editor = inject('editor')
+const editor = inject('mainEditor')
 const page = inject('page')
 const pagination = inject('pagination')
 const options = inject('options')

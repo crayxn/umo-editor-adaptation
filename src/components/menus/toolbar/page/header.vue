@@ -1,12 +1,16 @@
 <template>
   <menus-button
     ico="page-header"
-    :text="page.header ? t('page.header.hide') : t('page.header.show')"
+    :text="t('page.header.text')"
     huge
-    @menu-click="page.header = !page.header"
+    :disabled="page.layout !== 'page'"
+    :menu-active="headerFooter.active === 'header'"
+    @menu-click="editHeaderFooter('header')"
   />
 </template>
 
 <script setup>
 const page = inject('page')
+const headerFooter = inject('headerFooter')
+const editHeaderFooter = inject('editHeaderFooter')
 </script>

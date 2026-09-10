@@ -16,7 +16,11 @@
       >
         <t-watermark
           class="umo-page-content"
-          :class="{ 'umo-paginated-content': pageOptions.layout === 'page' }"
+          :class="{
+            'umo-paginated-content': pageOptions.layout === 'page',
+            'umo-header-footer-editing':
+              pageOptions.layout === 'page' && headerFooter.active,
+          }"
           :style="{
             '--umo-page-orientation': pageOptions.orientation,
             '--umo-page-background': pageOptions.background,
@@ -24,6 +28,10 @@
             '--umo-page-margin-bottom': pageOptions.margin?.bottom + 'cm',
             '--umo-page-margin-left': pageOptions.margin?.left + 'cm',
             '--umo-page-margin-right': pageOptions.margin?.right + 'cm',
+            '--umo-page-inset-top': pageInsets.top,
+            '--umo-page-inset-bottom': pageInsets.bottom,
+            '--umo-page-header-distance': headerFooterDistance.header + 'cm',
+            '--umo-page-footer-distance': headerFooterDistance.footer + 'cm',
             '--umo-page-width':
               pageOptions.layout === 'page' ? pageSize.width + 'cm' : 'auto',
             '--umo-page-height':
@@ -42,7 +50,6 @@
             v-if="pageOptions.layout === 'page'"
             class="umo-page-sheets"
             aria-hidden="true"
-            contenteditable="false"
           >
             <div
               v-for="number in pagination.pageCount"
@@ -69,9 +76,7 @@
                   class="umo-page-corner corner-bl"
                   style="width: var(--umo-page-margin-left)"
                 ></div>
-                <div class="umo-page-node-footer-content umo-page-number">
-                  {{ pageOptions.footer !== false ? number : '' }}
-                </div>
+                <div class="umo-page-node-footer-content"></div>
                 <div
                   class="umo-page-corner corner-br"
                   style="width: var(--umo-page-margin-right)"
@@ -102,6 +107,7 @@
               </template>
             </editor>
           </div>
+          <container-header-footer v-if="pageOptions.layout === 'page'" />
           <div
             v-if="pageOptions.layout !== 'page'"
             class="umo-page-node-footer"
@@ -143,17 +149,39 @@
 </template>
 
 <script setup>
-import { PAGE_GAP } from '@/extensions/pagination/layout'
+import {
+  getHeaderFooterDistance,
+  PAGE_GAP,
+} from '@/extensions/pagination/layout'
 
 const container = inject('container')
 const imageViewer = inject('imageViewer')
 const pageOptions = inject('page')
 const pagination = inject('pagination')
+const headerFooter = inject('headerFooter')
 const pageGap = PAGE_GAP
 const documentHeight = $computed(
   () =>
     `calc(${pagination.value.pageCount} * var(--umo-page-height) + ${pagination.value.pageCount - 1} * var(--umo-page-gap))`,
 )
+// 页眉页脚内容较高时，正文实际使用的上下留白会超过页边距
+const pageInsets = $computed(() => {
+  const { top = 0, bottom = 0 } = headerFooter.value.insets || {}
+  return {
+    top:
+      pageOptions.value.layout === 'page' && top > 0
+        ? `max(var(--umo-page-margin-top), ${top}px)`
+        : 'var(--umo-page-margin-top)',
+    bottom:
+      pageOptions.value.layout === 'page' && bottom > 0
+        ? `max(var(--umo-page-margin-bottom), ${bottom}px)`
+        : 'var(--umo-page-margin-bottom)',
+  }
+})
+const headerFooterDistance = $computed(() => ({
+  header: getHeaderFooterDistance(pageOptions.value.margin?.top),
+  footer: getHeaderFooterDistance(pageOptions.value.margin?.bottom),
+}))
 
 // 页面大小
 const pageSize = $computed(() => {
@@ -341,12 +369,12 @@ watch(
 }
 
 .umo-page-node-header {
-  height: var(--umo-page-margin-top);
+  height: var(--umo-page-inset-top, var(--umo-page-margin-top));
   overflow: hidden;
 }
 
 .umo-page-node-footer {
-  height: var(--umo-page-margin-bottom);
+  height: var(--umo-page-inset-bottom, var(--umo-page-margin-bottom));
   overflow: hidden;
 }
 
