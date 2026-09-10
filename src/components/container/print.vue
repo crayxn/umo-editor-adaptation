@@ -7,7 +7,7 @@ import {
   buildPrintPages,
   preparePaginationForPrint,
 } from '@/extensions/pagination/print'
-import { getHeaderFooterDistance } from '@/extensions/pagination/layout'
+import { CM_TO_PX, getHeaderFooterDistance } from '@/extensions/pagination/layout'
 
 const container = inject('container')
 const editor = inject('mainEditor')
@@ -92,6 +92,14 @@ const getIframeCode = () => {
   }
   const headerDistance = getHeaderFooterDistance(margin?.top)
   const footerDistance = getHeaderFooterDistance(margin?.bottom)
+  // 打印页物理高度，与 @page size 保持一致，页眉页脚以纸张边缘定位。
+  // 偏移取整到整数像素：cm 换算是小数（如 1.5cm = 56.69px），
+  // 1px 边框跨像素行时光栅化会丢掉顶部一像素，导致页眉顶端显示不全
+  const pxPerCm = CM_TO_PX
+  const pageHeight = orientation === 'portrait' ? size?.height : size?.width
+  const pageHeightPx = Math.round(Number(pageHeight || 0) * pxPerCm)
+  const headerOffsetPx = Math.round(headerDistance * pxPerCm)
+  const footerOffsetPx = Math.round(footerDistance * pxPerCm)
   /* eslint-disable */
   return `
     <!DOCTYPE html>
@@ -150,25 +158,59 @@ const getIframeCode = () => {
       }
       .umo-print-page{
         position: relative;
+        /* 至少占满一页纸张（减 1px 避免舍入溢出产生空白页），页眉页脚的
+           top/bottom 才能以纸张边缘为参照，与屏幕端一致；内容超过一页
+           （如跨页表格）时仍按内容撑高，交给浏览器自然分页 */
+        min-height: ${pageHeightPx - 1}px;
+        /* 消除编辑器段落间距在分页 section 间产生的额外空隙，
+           否则 section 放不进一页会打印出空白页 */
+        margin: 0 !important;
       }
       .umo-print-page:not(:last-child){
         break-after: page;
       }
       .umo-print-page-header{
         position: absolute;
-        top: ${headerDistance}cm;
+        top: ${headerOffsetPx}px;
         left: 0;
         right: 0;
         box-sizing: border-box;
         padding: 0 ${margin?.right}cm 0 ${margin?.left}cm;
+        color: var(--umo-content-text-color);
+        /* 与屏幕端页眉页脚（.umo-page-region）的字号/行距一致，
+           度量偏差会让正文与页眉之间留出大片空白 */
+        font-size: 12px;
+        line-height: normal;
+        font-family: var(--umo-font-family);
       }
       .umo-print-page-footer{
         position: absolute;
-        bottom: ${footerDistance}cm;
+        bottom: ${footerOffsetPx}px;
         left: 0;
         right: 0;
         box-sizing: border-box;
         padding: 0 ${margin?.right}cm 0 ${margin?.left}cm;
+        color: var(--umo-content-text-color);
+        font-size: 12px;
+        line-height: normal;
+        font-family: var(--umo-font-family);
+      }
+      /* 与屏幕端编辑器段落间距保持一致；提高特异性以覆盖
+         全局样式 .umo-editor-container p 的 margin: 0 */
+      .umo-editor-container .umo-print-page-header > * + *,
+      .umo-editor-container .umo-print-page-footer > * + *{
+        margin-top: var(--umo-content-node-bottom);
+      }
+      /* 屏幕端图片是块级节点（独立成行），打印端保持一致 */
+      .umo-print-page-header img,
+      .umo-print-page-footer img{
+        display: block;
+      }
+      /* 屏幕端空段落靠 tiptap 的行尾 br 撑出行框，序列化后的空段落
+         需要补回同样的高度，否则页眉页脚比屏幕端矮 */
+      .umo-print-page-header p:empty::after,
+      .umo-print-page-footer p:empty::after{
+        content: '\\200B';
       }
       @page {
         size: ${orientation === 'portrait' ? size?.width : size?.height}cm ${orientation === 'portrait' ? size?.height : size?.width}cm;
@@ -185,6 +227,45 @@ const getIframeCode = () => {
         ${contentDiv.innerHTML}
       </div>
       <script>
+        // 页眉页脚超出预留位置时向下挤压正文：按打印时实际渲染的高度校准
+        // 正文上下 padding（只增不减，静态预留值来自屏幕端测量）。
+        window.fitHeaderFooter = function () {
+          var sections = document.querySelectorAll('.umo-print-page')
+          if (!sections.length) return
+          var probe = document.createElement('div')
+          probe.style.cssText = 'position:absolute;visibility:hidden;height:1cm'
+          document.body.appendChild(probe)
+          var cm = probe.offsetHeight || 37.8
+          probe.parentNode.removeChild(probe)
+          var gap = 0.2 * cm
+          Array.prototype.forEach.call(sections, function (section) {
+            var body = section.querySelector('.umo-print-page-body')
+            if (!body) return
+            var header = section.querySelector('.umo-print-page-header')
+            var footer = section.querySelector('.umo-print-page-footer')
+            if (!header && !footer) return
+            var style = getComputedStyle(body)
+            var paddingTop = parseFloat(style.paddingTop) || 0
+            var paddingBottom = parseFloat(style.paddingBottom) || 0
+            if (header) {
+              var headerNeed =
+                (parseFloat(getComputedStyle(header).top) || 0) +
+                header.offsetHeight + gap
+              if (headerNeed > paddingTop) paddingTop = headerNeed
+            }
+            if (footer) {
+              var footerNeed =
+                (parseFloat(getComputedStyle(footer).bottom) || 0) +
+                footer.offsetHeight + gap
+              if (footerNeed > paddingBottom) paddingBottom = footerNeed
+            }
+            body.style.paddingTop = paddingTop + 'px'
+            body.style.paddingBottom = paddingBottom + 'px'
+          })
+        }
+        document.addEventListener('DOMContentLoaded', window.fitHeaderFooter)
+        // print() 同步触发 beforeprint，此时字体图片已就绪，按最终度量再校准一次
+        window.addEventListener('beforeprint', window.fitHeaderFooter)
         document.addEventListener("DOMContentLoaded", (event) => {
           const observer = new MutationObserver(mutations => {
             mutations.forEach(mutation => {

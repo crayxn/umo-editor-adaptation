@@ -397,6 +397,55 @@ test('printing preserves page count and removes screen spacers', async ({
   await output.close()
 })
 
+test('tall header pushes body content down when printing', async ({
+  page,
+  context,
+}) => {
+  await setContent(page, `<p>${'正文内容，用于验证页眉挤压。'.repeat(60)}</p>`)
+  await page.evaluate(() => {
+    const p = window.umo.getPage()
+    p.header = {
+      ...p.header,
+      show: true,
+      content: Array.from(
+        { length: 8 },
+        (_, i) => `<p>页眉第 ${i + 1} 行</p>`,
+      ).join(''),
+    }
+  })
+  await settle(page)
+  const count = await pageCount(page)
+  await page.evaluate(() => window.umo.print())
+  await expect(page.locator('.umo-print-iframe')).toHaveAttribute(
+    'srcdoc',
+    /umo-print-page-header/,
+  )
+  const code = await page.locator('.umo-print-iframe').getAttribute('srcdoc')
+  const output = await context.newPage()
+  await output.setContent(code)
+  // 模拟静态预留不足：清空正文上边距后运行挤压逻辑，正文必须被推到页眉之下
+  const layout = await output.evaluate(() => {
+    const body = document.querySelector('.umo-print-page-body')
+    body.style.paddingTop = '0px'
+    window.fitHeaderFooter()
+    const section = document.querySelector('.umo-print-page')
+    const header = section.querySelector('.umo-print-page-header')
+    const first = section.querySelector('.umo-print-page-body > *')
+    return {
+      headerBottom: header.getBoundingClientRect().bottom,
+      bodyTop: first.getBoundingClientRect().top,
+      padding: body.style.paddingTop,
+    }
+  })
+  expect(layout.padding).not.toBe('0px')
+  expect(layout.bodyTop).toBeGreaterThan(layout.headerBottom)
+  const pdf = await output.pdf({ preferCSSPageSize: true })
+  expect(
+    (pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length,
+  ).toBe(count)
+  await output.close()
+})
+
 test('code blocks paginate without losing lines', async ({ page }) => {
   await setContent(
     page,

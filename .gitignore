@@ -44,3 +44,5 @@ pnpm-lock.yaml
 # Other
 .DS_Store
 Thumbs.db
+
+.claude
