@@ -48,6 +48,7 @@
       <footer class="umo-footer">
         <statusbar />
       </footer>
+      <dialog-docx-export />
     </div>
   </t-config-provider>
 </template>
@@ -61,6 +62,7 @@ import {
 } from '@tool-belt/type-predicates'
 import { AllSelection } from '@tiptap/pm/state'
 import domToImage from 'dom-to-image-more'
+import { saveAs } from 'file-saver'
 import enConfig from 'tdesign-vue-next/esm/locale/en_US'
 import cnConfig from 'tdesign-vue-next/esm/locale/zh_CN'
 
@@ -69,6 +71,7 @@ import { i18n } from '@/i18n'
 import { propsOptions } from '@/options'
 import { contentTransform } from '@/utils/content-transform'
 import { consoleCopyright } from '@/utils/copyright'
+import { docxFilename } from '@/utils/docx/format'
 import {
   addHistory,
   redoHistoryRecord,
@@ -150,7 +153,7 @@ const imageViewer = ref({ visible: false, current: null })
 const searchReplace = ref(false)
 const printing = ref(false)
 const fullscreen = ref(false)
-const exportFile = ref({ pdf: false, image: false })
+const exportFile = ref({ pdf: false, image: false, docx: false })
 const uploadFileMap = ref(new Map())
 // const bookmark = ref(false)
 const destroyed = ref(false)
@@ -975,6 +978,80 @@ const getImage = async (format = 'blob') => {
   }
 }
 
+// Snapshot every editor before loading the exporter, including unsynced edits
+// in the header/footer. Exporting leaves selection, zoom and history intact.
+const getDocx = async () => {
+  await nextTick()
+  const instance = editor.value
+  if (!instance || instance.isDestroyed) {
+    throw new Error('editor is not ready!')
+  }
+  const style = getComputedStyle(instance.view.dom)
+  const indentOptions = instance.extensionManager.extensions.find(
+    (extension) => extension.name === 'indent',
+  )?.options
+  const snapshot = {
+    content: instance.getJSON(),
+    schema: instance.schema,
+    title: options.value.document?.title || t('document.untitled'),
+    page: JSON.parse(
+      JSON.stringify({
+        ...page.value,
+        insets: headerFooter.value.insets,
+      }),
+    ),
+    header: headerFooterEditors.header?.getJSON(),
+    footer: headerFooterEditors.footer?.getJSON(),
+    indentSize: indentOptions?.indentSize,
+    indentUnit: indentOptions?.defaultUnit,
+    styles: {
+      fontFamily: style.fontFamily,
+      fontSize: style.fontSize,
+      color:
+        style.getPropertyValue('--umo-content-text-color').trim() ||
+        style.color,
+      nodeSpacing: style.getPropertyValue('--umo-content-node-bottom').trim(),
+      codeFont: style.getPropertyValue('--umo-content-code-family').trim(),
+      tableBorder: style
+        .getPropertyValue('--umo-content-table-border-color')
+        .trim(),
+      tableHeaderBackground: style
+        .getPropertyValue('--umo-content-table-thead-background')
+        .trim(),
+    },
+  }
+  const { createDocx } = await import('@/utils/docx/index')
+  return createDocx(snapshot)
+}
+
+let docxExportTask = null
+const exportDocx = (filename) => {
+  if (docxExportTask) return docxExportTask
+  const name = docxFilename(
+    filename || options.value.document?.title,
+    t('document.untitled'),
+  )
+  exportFile.value.docx = true
+  docxExportTask = (async () => {
+    await nextTick()
+    // Let the progress dialog paint before synchronous document conversion.
+    await new Promise((resolve) => {
+      if (document.hidden) setTimeout(resolve, 0)
+      else requestAnimationFrame(() => setTimeout(resolve, 0))
+    })
+    return getDocx()
+  })()
+    .then((blob) => {
+      saveAs(blob, name)
+      return blob
+    })
+    .finally(() => {
+      exportFile.value.docx = false
+      docxExportTask = null
+    })
+  return docxExportTask
+}
+
 // Editor Interaction Methods
 const getText = () => getContent('text')
 const getHTML = () => getContent('html')
@@ -1388,6 +1465,7 @@ provide('setSkin', setSkin)
 provide('setLocale', setLocale)
 provide('reset', reset)
 provide('getVanillaHTML', getVanillaHTML)
+provide('exportDocx', exportDocx)
 provide('undoHistory', undoHistory)
 provide('redoHistory', redoHistory)
 provide('editHeaderFooter', editHeaderFooter)
@@ -1414,6 +1492,8 @@ defineExpose({
   getHeaderFooterEditor: (kind = 'header') => headerFooterEditors[kind],
   getContent,
   getImage,
+  getDocx,
+  exportDocx,
   getText,
   getHTML,
   getJSON,

@@ -541,6 +541,14 @@
     "locale": "语言设置"
   },
   "export": {
+    "docx": {
+      "text": "Word 文档",
+      "loading": "正在导出…",
+      "error": {
+        "title": "导出失败",
+        "message": "无法导出 Word 文档。请确认文档中的图片可访问后重试。"
+      }
+    },
     "embed": {
       "text": "Embed",
       "title": "Embed 嵌入",

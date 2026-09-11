@@ -8,6 +8,7 @@ import {
   preparePaginationForPrint,
 } from '@/extensions/pagination/print'
 import { CM_TO_PX, getHeaderFooterDistance } from '@/extensions/pagination/layout'
+import { getHeaderFooterCloneHTML } from '@/utils/header-footer'
 
 const container = inject('container')
 const editor = inject('mainEditor')
@@ -15,6 +16,7 @@ const printing = inject('printing')
 const exportFile = inject('exportFile')
 const page = inject('page')
 const headerFooter = inject('headerFooter')
+const headerFooterEditors = inject('headerFooterEditors')
 const options = inject('options')
 
 const iframeRef = $ref(null)
@@ -77,15 +79,17 @@ const getIframeCode = () => {
     page.value.layout === 'page' &&
     (page.value.header?.show !== false || page.value.footer?.show !== false)
   if (withHeaderFooter) {
+    // Use the rendered node views, as on the other preview pages. Serialized
+    // image figures lose their layout, cropping and transforms when printed.
+    const regionHtml = (kind) =>
+      page.value[kind]?.show !== false
+        ? getHeaderFooterCloneHTML(headerFooterEditors?.[kind]) ||
+          page.value[kind]?.content ||
+          ''
+        : ''
     buildPrintPages(contentDiv, {
-      headerHtml:
-        page.value.header?.show !== false
-          ? page.value.header?.content || ''
-          : '',
-      footerHtml:
-        page.value.footer?.show !== false
-          ? page.value.footer?.content || ''
-          : '',
+      headerHtml: regionHtml('header'),
+      footerHtml: regionHtml('footer'),
       margin,
       insets: headerFooter.value?.insets,
     })
@@ -144,6 +148,17 @@ const getIframeCode = () => {
       }
       .umo-editor-content .tableWrapper{
         overflow: visible !important;
+      }
+      /* Rendered image nodes retain editor controls and loading overlays. */
+      .umo-editor-container .es-drager-dot,
+      .umo-editor-container .es-drager-rotate,
+      .umo-editor-container .umo-node-image-loading,
+      .umo-editor-container .umo-node-image-uploading{
+        display: none !important;
+      }
+      .umo-editor-container .es-drager{
+        outline: none !important;
+        box-shadow: none !important;
       }
       .umo-print-break{
         display: block;

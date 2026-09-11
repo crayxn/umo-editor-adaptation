@@ -225,6 +225,7 @@
       </template>
       <template v-if="currentMenu === 'export'">
         <div class="umo-virtual-group">
+          <menus-toolbar-export-docx v-if="!disableMenu('export-docx')" />
           <menus-toolbar-export-image v-if="!disableMenu('export-image')" />
           <menus-toolbar-export-pdf v-if="!disableMenu('export-pdf')" />
           <menus-toolbar-export-text v-if="!disableMenu('export-text')" />

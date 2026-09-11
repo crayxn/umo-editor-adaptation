@@ -446,6 +446,114 @@ test('tall header pushes body content down when printing', async ({
   await output.close()
 })
 
+for (const kind of ['header', 'footer']) {
+  test(`printing merged ${kind} tables keeps images inside their cells`, async ({
+    page,
+    context,
+  }, testInfo) => {
+    const src =
+      'data:image/svg+xml,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="140" height="74"><rect width="140" height="74" fill="#304448"/><circle cx="28" cy="37" r="18" fill="#e53935"/><path d="M60 25h65v24H60z" fill="white"/></svg>',
+      )
+    await page.evaluate(
+      ({ kind, src }) => {
+        const settings = window.umo.getPage()
+        settings.margin = { top: 2, bottom: 2, left: 2.5, right: 2.5 }
+        settings.header.show = false
+        settings.footer.show = false
+        settings[kind] = {
+          ...settings[kind],
+          show: true,
+          content: `<table><tbody><tr><th rowspan="3"><img src="${src}" width="140" height="74"></th><th colspan="3"><p>测试文档</p></th></tr><tr><td><p>编号</p></td><td><p>5</p></td><td><p>1</p></td></tr><tr><td><p>版本</p></td><td><p>A</p></td><td><p><span data-type="pageNumber"></span> / <span data-type="pageCount"></span></p></td></tr></tbody></table>`,
+        }
+      },
+      { kind, src },
+    )
+    await setContent(
+      page,
+      '<p>测试文档正文</p><div class="umo-page-break"></div><p>第二页正文</p>',
+    )
+    const liveImage = page.locator(`.umo-page-${kind}.is-live img[src]`)
+    await expect(liveImage).toBeVisible()
+    await liveImage.evaluate((image) => image.decode())
+    await settle(page)
+    await page.locator(`.umo-page-${kind}.is-live th p`).dblclick()
+    await liveImage.click()
+    await expect(
+      page.locator(`.umo-page-${kind}.is-live .es-drager.selected`),
+    ).toHaveCount(1)
+
+    const measureImage = (image) => {
+      const rect = image.getBoundingClientRect()
+      const cell = image.closest('th, td').getBoundingClientRect()
+      return {
+        left: rect.left - cell.left,
+        top: rect.top - cell.top,
+        width: rect.width,
+        height: rect.height,
+        right: cell.right - rect.right,
+        bottom: cell.bottom - rect.bottom,
+      }
+    }
+    const preview = await liveImage.evaluate(measureImage)
+    const count = await pageCount(page)
+    await page.evaluate(() => window.umo.print())
+    await expect(page.locator('.umo-print-iframe')).toHaveAttribute(
+      'srcdoc',
+      /umo-print-page/,
+    )
+    const code = await page.locator('.umo-print-iframe').getAttribute('srcdoc')
+    const output = await context.newPage()
+    await output.setViewportSize({ width: 794, height: 1123 })
+    await output.emulateMedia({ media: 'print' })
+    await output.setContent(code)
+    const images = output.locator(`.umo-print-page-${kind} img[src]`)
+    await expect(images).toHaveCount(count)
+    await images.evaluateAll((elements) =>
+      Promise.all(elements.map((image) => image.decode())),
+    )
+    await output.evaluate(() => window.fitHeaderFooter())
+    const controls = output.locator(
+      '.es-drager-dot, .es-drager-rotate, .umo-node-image-loading, .umo-node-image-uploading',
+    )
+    for (const control of await controls.all()) {
+      await expect(control).toBeHidden()
+    }
+    for (const frame of await output.locator('.es-drager').all()) {
+      await expect(frame).toHaveCSS('outline-style', 'none')
+    }
+    await expect(
+      output.locator(`.umo-print-page-${kind} [data-type="pageNumber"]`),
+    ).toHaveText(['1', '2'])
+    await expect(
+      output.locator(`.umo-print-page-${kind} [data-type="pageCount"]`),
+    ).toHaveText(['2', '2'])
+    await output.screenshot({ path: testInfo.outputPath(`${kind}-print.png`) })
+    const pdf = await output.pdf({
+      preferCSSPageSize: true,
+      printBackground: true,
+      path: testInfo.outputPath(`${kind}-table.pdf`),
+    })
+    for (const image of await images.all()) {
+      const printed = await image.evaluate(measureImage)
+      expect(printed.left).toBeGreaterThanOrEqual(0)
+      expect(printed.top).toBeGreaterThanOrEqual(0)
+      expect(printed.right).toBeGreaterThanOrEqual(0)
+      expect(printed.bottom).toBeGreaterThanOrEqual(0)
+      for (const dimension of ['left', 'top', 'width', 'height']) {
+        expect(
+          Math.abs(printed[dimension] - preview[dimension]),
+        ).toBeLessThan(1)
+      }
+    }
+    expect(
+      (pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length,
+    ).toBe(count)
+    await output.close()
+  })
+}
+
 test('code blocks paginate without losing lines', async ({ page }) => {
   await setContent(
     page,

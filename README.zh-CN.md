@@ -17,6 +17,8 @@ Umo Editor 是一个基于 Vue3 和 Tiptap3 的本土化开源文档编辑器，
 
 自动分页、手动分页和页数 API 的使用方式见[分页说明](./docs/pagination.md)。
 
+支持在浏览器中导出可编辑的 Word 文档，工具栏入口和 API 见[DOCX 导出说明](./docs/docx.md)。
+
 此外，Umo Editor 还支持自定义扩展、多语言设置和暗色主题。同时我们提供了单独的文本预览组件[Umo Viewer](https://github.com/umodoc/viewer)，用户可以在项目中使用该组件来预览文档。
 
 Umo Editor 最大的特点是代码完全开源且自主可控，支持私有部署，您可以内网环境中使用，而无需担心数据安全问题。同时 Umo Editor 基于 Vue3 和 Tiptap3，两者都有丰富的生态系统和社区支持，在遇到问题时可以迅速得到解决。

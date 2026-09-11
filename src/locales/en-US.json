@@ -542,6 +542,14 @@
     "locale": "Language"
   },
   "export": {
+    "docx": {
+      "text": "Word Document",
+      "loading": "Exporting…",
+      "error": {
+        "title": "Export Failed",
+        "message": "Unable to export the Word document. Please check that its images are accessible and try again."
+      }
+    },
     "embed": {
       "text": "Embed",
       "title": "Embed Code",
