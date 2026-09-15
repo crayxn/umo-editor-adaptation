@@ -49,10 +49,6 @@
           :class="{ active: statusPopup }"
         >
           <span class="umo-status">
-            <span
-              class="umo-status-online"
-              :class="{ offline: !online }"
-            ></span>
             <span class="umo-status-saved button-text">
               <span
                 v-if="savedAt"
@@ -93,39 +89,6 @@
           </div>
         </template>
       </t-popup>
-      <t-dropdown
-        trigger="click"
-        size="small"
-        placement="bottom-right"
-        :popup-props="{
-          destroyOnClose: true,
-          attach: container,
-        }"
-        @click="toggleToolbarMode"
-      >
-        <t-button
-          class="umo-toolbar-actions-button"
-          variant="text"
-          size="small"
-        >
-          <icon name="expand-down" />
-          <span class="umo-button-text">{{ t('toolbar.toggle') }}</span>
-        </t-button>
-        <template #dropdown>
-          <t-dropdown-menu
-            v-for="item in editorModeOptions"
-            :key="item.value"
-            :content="item.label"
-            :value="item.value"
-            :divider="item.divider"
-            :active="item.value === $toolbar.mode"
-          >
-            <template #prefixIcon>
-              <icon :name="item.prefixIcon" />
-            </template>
-          </t-dropdown-menu>
-        </template>
-      </t-dropdown>
     </div>
   </div>
   <tooltip v-else :content="t('toolbar.show')" placement="bottom-right">
@@ -182,34 +145,6 @@ watch(
     }
   },
 )
-
-// 切换编辑器模式
-const editorModeOptions = [
-  {
-    label: t('toolbar.ribbon'),
-    value: 'ribbon',
-    prefixIcon: 'toolbar-ribbon',
-  },
-  {
-    label: t('toolbar.classic'),
-    value: 'classic',
-    prefixIcon: 'toolbar-classic',
-  },
-  {
-    label: t('toolbar.hide'),
-    value: 'hideToolbar',
-    prefixIcon: 'hide-toolbar',
-  },
-]
-
-const toggleToolbarMode = ({ value }) => {
-  if (value === 'hideToolbar') {
-    $toolbar.value.show = false
-  } else {
-    $toolbar.value.show = true
-    $toolbar.value.mode = value
-  }
-}
 
 // 保存文档
 const saveContentMethod = inject('saveContent')
@@ -272,12 +207,6 @@ const setContentFromCache = () => {
   }
   @media screen and (max-width: 640px) {
     padding-left: 0;
-    .umo-status-online {
-      margin-right: 0;
-    }
-    .umo-button-text {
-      display: none;
-    }
   }
 }
 .umo-show-toolbar {
@@ -303,15 +232,6 @@ const setContentFromCache = () => {
   display: flex;
   align-items: center;
   cursor: pointer;
-  &-online {
-    width: 10px;
-    height: 10px;
-    background: rgb(26, 187, 26);
-    border-radius: 50%;
-    &.offline {
-      background: rgb(187, 26, 26);
-    }
-  }
   &-saved {
     color: var(--umo-text-color-light);
     margin-left: 5px;

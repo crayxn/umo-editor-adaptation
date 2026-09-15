@@ -13,19 +13,18 @@
       style="
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: flex-start;
         line-height: 2;
         padding: 30px 0 0;
       "
     >
-      <a href="https://www.umodoc.com" target="_blank">
+      <!-- <a href="https://www.umodoc.com" target="_blank">
         <img src="@/assets/images/logo.svg" width="160" style="display: flex" />
-      </a>
-      <p>
-        {{ t('about.version') }}: v{{ version }} ({{ t('about.openSource') }})
-      </p>
-      <p v-html="t('about.poweredBy')"></p>
-      <p>
+      </a> -->
+      <p>{{ t('about.version') }}: v{{ version }}</p>
+      <p>This package is a fork of <a href="https://github.com/umodoc/editor" target="_blank">@umoteam/editor</a> with custom adaptations. </p>
+      <!-- <p v-html="t('about.poweredBy')"></p> -->
+      <!-- <p>
         <a href="https://github.com/umodoc/editor" target="_blank"> Github </a>
         |
         <a
@@ -38,7 +37,7 @@
         <a href="https://www.npmjs.com/package/@umoteam/editor" target="_blank">
           NPM
         </a>
-      </p>
+      </p> -->
       <t-divider>{{ t('about.thanks') }}</t-divider>
       <p style="text-align: center; font-size: 12px; padding: 0 10px">
         <a href="https://github.com/Cassielxd" target="_blank">Cassielxd</a>
@@ -71,11 +70,11 @@
         ·
         <a href="https://github.com/Mikasa33" target="_blank">Mikasa33</a>
       </p>
-      <t-divider></t-divider>
-      <p
+      <!-- <t-divider></t-divider> -->
+      <!-- <p
         style="text-align: center; font-size: 12px"
         v-html="t('about.next')"
-      ></p>
+      ></p> -->
     </div>
   </modal>
 </template>
