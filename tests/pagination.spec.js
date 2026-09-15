@@ -458,6 +458,11 @@ for (const kind of ['header', 'footer']) {
       )
     await page.evaluate(
       ({ kind, src }) => {
+        // Keep the fixture readable by the separate PDF page after upload.
+        window.umo.getOptions().onFileUpload = async () => ({
+          id: `print-${kind}-image`,
+          url: src,
+        })
         const settings = window.umo.getPage()
         settings.margin = { top: 2, bottom: 2, left: 2.5, right: 2.5 }
         settings.header.show = false
