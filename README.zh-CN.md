@@ -1,3 +1,5 @@
+> **说明：** 本包（`@crayxn/umo-editor`）是基于 [Umo Editor](https://github.com/umodoc/editor)（`@umoteam/editor`）的二次开发（fork）版本，原项目由 [umodoc 团队](https://github.com/umodoc)开发，遵循 MIT 协议。
+
 <p style="text-align: center; margin: 2rem 0;">
 <a href="https://www.umodoc.com" target="_blank"><img src="https://unpkg.com/@umoteam/editor-external@latest/static/logo.svg" alt="umodoc.com" width="280" /></a>
 </p>

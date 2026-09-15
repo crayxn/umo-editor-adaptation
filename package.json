@@ -1,7 +1,7 @@
 {
-  "name": "@umoteam/editor",
+  "name": "@crayxn/umo-editor",
   "version": "11.1.1",
-  "description": "Umo Editor is open-source document editor based on Vue3 and Tiptap3. Umo Editor provides comprehensive document editing capabilities and AI creation features, supports pagination, supports Markdown syntax, offers basic rich text editing functions, allows for the insertion of various node types in multiple formats, provides a variety of practical tools, and supports setting page styles. It also supports exporting in various formats, printing and print preview, block-level document editing, adding custom extensions, multi-language settings, and a dark theme.",
+  "description": "A fork of Umo Editor (https://github.com/umodoc/editor) with custom adaptations. Umo Editor is an open-source document editor based on Vue3 and Tiptap3, provides comprehensive document editing capabilities, supports pagination, Markdown syntax, rich text editing, various node types, page styles, exporting in various formats, printing and print preview.",
   "keywords": [
     "docs editor",
     "document editor",
@@ -20,24 +20,25 @@
     "word editor",
     "wysiwyg editor"
   ],
-  "homepage": "https://www.umodoc.com",
+  "homepage": "https://github.com/crayxn/umo-editor-adaptation#readme",
   "bugs": {
-    "url": "https://github.com/umodoc/editor/issues",
-    "email": "contact@umodoc.com"
+    "url": "https://github.com/crayxn/umo-editor-adaptation/issues"
   },
   "license": "MIT",
   "author": {
-    "name": "umodoc",
-    "email": "contact@umodoc.com",
-    "url": "https://www.umodoc.com"
+    "name": "crayxn",
+    "url": "https://github.com/crayxn"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/umodoc/editor.git"
+    "url": "https://github.com/crayxn/umo-editor-adaptation.git"
   },
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "exports": {
     ".": {

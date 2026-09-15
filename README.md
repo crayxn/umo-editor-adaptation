@@ -1,3 +1,5 @@
+> **Note:** This package (`@crayxn/umo-editor`) is a fork of [Umo Editor](https://github.com/umodoc/editor) (`@umoteam/editor`) with custom adaptations. All credit for the original work goes to the [umodoc team](https://github.com/umodoc), licensed under the MIT License.
+
 <p style="text-align: center; margin: 2rem 0;">
 <a href="https://www.umodoc.com/en" target="_blank"><img src="https://unpkg.com/@umoteam/editor-external@latest/static/logo.svg" alt="umodoc.com" width="280" /></a>
 </p>
